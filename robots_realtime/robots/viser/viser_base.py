@@ -6,11 +6,14 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal, Optional
+from pathlib import Path
 
 import numpy as np
 import viser
 import viser.extras
 import viser.transforms as vtf
+import mujoco
+import mujoco.viewer
 
 import yourdfpy
 import os
@@ -62,6 +65,9 @@ class ViserAbstractBase(ABC):
             )
         else:
             self.urdf = load_urdf_robot_description(robot_description)
+        
+        xml_path = "/workspace/mujoco-3.4.0/model/yam/station_tst.xml"
+        self.model, self.data = self.load_mj(Path(xml_path))
 
 
         self.viser_server = viser_server if viser_server is not None else viser.ViserServer()
@@ -192,23 +198,37 @@ class ViserAbstractBase(ABC):
         """Reset robot to rest pose. Must be implemented by subclasses."""
         raise NotImplementedError
 
+    def load_mj(self, mjcf: Path):
+        model = mujoco.MjModel.from_xml_path(str(mjcf))
+        # model.cam_fovy[0] = 1.0
+        data = mujoco.MjData(model)
+        return model, data
+
     def run(self):
         """Main run loop with enhanced timing."""
-        while True:
-            start_time = time.time()
+        with mujoco.viewer.launch_passive(self.model, self.data) as viewer: 
+            while True:
+                start_time = time.time()
 
-            self.solve_ik()
-            self.update_visualization()
+                self.solve_ik()
+                self.update_visualization()
 
-            # Update timing with exponential moving average
-            elapsed_time = time.time() - start_time
-            if hasattr(self, "timing_handle"):
-                self.timing_handle.value = 0.99 * self.timing_handle.value + 0.01 * (elapsed_time * 1000)
+                self.data.qpos[:6] = self.joints["left"][::-1]
+                self.data.qpos[6:8] = [0.0, 0.0]
+                if self.bimanual:
+                    self.data.qpos[8:14] = self.joints["right"][::-1]
+                    self.data.qpos[14:16] = [0.0, 0.0]
+                mujoco.mj_forward(self.model, self.data)
+                viewer.sync()
+                # Update timing with exponential moving average
+                elapsed_time = time.time() - start_time
+                if hasattr(self, "timing_handle"):
+                    self.timing_handle.value = 0.99 * self.timing_handle.value + 0.01 * (elapsed_time * 1000)
 
-            # Sleep to maintain desired rate
-            sleep_time = max(0, (1.0 / self.rate) - elapsed_time)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+                # Sleep to maintain desired rate
+                sleep_time = max(0, (1.0 / self.rate) - elapsed_time)
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
 
     # Abstract methods that must be implemented by subclasses
     @abstractmethod

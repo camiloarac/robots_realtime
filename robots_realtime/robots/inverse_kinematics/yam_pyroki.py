@@ -34,7 +34,6 @@ class YamPyroki(ViserAbstractBase):
         self.coordinate_frame = coordinate_frame
         self.has_jitted_left = False
         self.has_jitted_right = False
-
         if bimanual:
             self.target_link_names = self.target_link_names * 2
             self.joints["right"] = np.zeros(6)
@@ -139,6 +138,7 @@ class YamPyroki(ViserAbstractBase):
                 target_wxyz=target_tf.rotation().wxyz,
             )
             self.joints[side] = solution
+            print(f"solution[{side}]: {solution}")
 
     def update_visualization(self):
         """Update visualization with current joint configurations."""
@@ -177,7 +177,6 @@ class YamPyroki(ViserAbstractBase):
     def solve_ik_base(self, target_positions, target_wxyzs=None):
         """Convenience method for IK with base coordinate targets."""
         return self.solve_ik_with_targets(target_positions, target_wxyzs, coordinate_frame="base")
-
 
 def main():
     """Main function for YAM IK visualization."""

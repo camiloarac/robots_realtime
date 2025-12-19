@@ -54,9 +54,8 @@ class ViserAbstractBase(ABC):
 
         if robot_description == "yam_description": # temporary fix for yam_description
             # current path
-            current_path = os.path.dirname(os.path.abspath(__file__))
-            urdf_path = os.path.join(current_path, "..", "..", "..", "dependencies", "i2rt", "i2rt", "robot_models", "yam", "yam.urdf")
-            mesh_dir = os.path.join(current_path, "..", "..", "..", "dependencies", "i2rt", "i2rt", "robot_models", "yam", "assets")
+            urdf_path = os.path.abspath("/workspace/thirdparty/i2rt/i2rt/robot_models/yam/yam.urdf")
+            mesh_dir = os.path.abspath("/workspace/thirdparty/i2rt/i2rt/robot_models/yam/assets")
             self.urdf = yourdfpy.URDF.load(
                 urdf_path,
                 mesh_dir=mesh_dir,

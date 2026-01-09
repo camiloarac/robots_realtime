@@ -11,7 +11,7 @@ import viser
 import viser.extras
 import viser.transforms as vtf
 
-from robots_realtime.robots.inverse_kinematics.pyroki_snippets._solve_ik import solve_ik
+from robots_realtime.robots.inverse_kinematics.pyroki_snippets._solve_ik_with_manipulability import solve_ik_with_manipulability
 from robots_realtime.robots.viser.viser_base import TransformHandle, ViserAbstractBase
 
 
@@ -131,11 +131,12 @@ class YamPyroki(ViserAbstractBase):
             target_positions.append(target_tf.translation())
             target_wxyzs.append(target_tf.rotation().wxyz)
 
-            solution = solve_ik(
+            solution = solve_ik_with_manipulability(
                 robot=self.robot,
                 target_link_name=self.target_link_names[idx],
                 target_position=target_tf.translation(),
                 target_wxyz=target_tf.rotation().wxyz,
+                manipulability_weight=0.1,
             )
             self.joints[side] = solution
 
